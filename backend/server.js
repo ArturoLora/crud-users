@@ -1,13 +1,13 @@
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2/promise"); // Use mysql2 with promises
+const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const app = express();
 
-app.use(cors()); // Configura CORS
-app.use(express.json()); // Para parsear JSON
+app.use(cors());
+app.use(express.json());
 
 const db = mysql.createPool({
     host: "localhost",
@@ -16,30 +16,28 @@ const db = mysql.createPool({
     database: "crud"
 });
 
-// Middleware para autenticación
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) return res.sendStatus(401); // No token provided
+    if (!token) return res.sendStatus(401);
 
     try {
-        const decoded = jwt.verify(token, 'your_jwt_secret'); // Cambia 'your_jwt_secret' por tu secreto real
+        const decoded = jwt.verify(token, 'your_jwt_secret');
         const [results] = await db.query("SELECT status FROM users WHERE id = ?", [decoded.id]);
 
-        if (results.length === 0) return res.sendStatus(404); // Usuario no encontrado
+        if (results.length === 0) return res.sendStatus(404);
         if (results[0].status === 'blocked' || results[0].status === 'deleted') {
-            return res.sendStatus(403); // Usuario bloqueado o eliminado
+            return res.sendStatus(403);
         }
 
         req.user = decoded;
         next();
     } catch (err) {
-        res.sendStatus(err.name === 'JsonWebTokenError' ? 403 : 500); // Error de token o error del servidor
+        res.sendStatus(err.name === 'JsonWebTokenError' ? 403 : 500);
     }
 };
 
-// Ruta para registrar un nuevo usuario
 app.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json("All fields are required");
@@ -54,7 +52,6 @@ app.post("/register", async (req, res) => {
     }
 });
 
-// Ruta para iniciar sesión
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
@@ -68,7 +65,7 @@ app.post("/login", async (req, res) => {
         if (user.status === 'blocked') return res.status(403).json("Your account is blocked. Please contact support.");
 
         await db.query("UPDATE users SET last_login = NOW() WHERE id = ?", [user.id]);
-        const token = jwt.sign({ id: user.id }, 'your_jwt_secret', { expiresIn: '1h' }); // Cambia 'your_jwt_secret' por tu secreto real
+        const token = jwt.sign({ id: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
         res.json({ token });
     } catch (err) {
         console.error("Error during login query: ", err);
@@ -76,7 +73,6 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Ruta para obtener todos los usuarios
 app.get("/", authenticateToken, async (req, res) => {
     try {
         const [data] = await db.query("SELECT id, name, email, last_login, registration_time, status FROM users");
@@ -87,7 +83,6 @@ app.get("/", authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta para bloquear usuarios
 app.post("/block", authenticateToken, async (req, res) => {
     const { ids } = req.body;
     try {
@@ -99,7 +94,6 @@ app.post("/block", authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta para desbloquear usuarios
 app.post("/unblock", authenticateToken, async (req, res) => {
     const { ids } = req.body;
     try {
@@ -111,7 +105,6 @@ app.post("/unblock", authenticateToken, async (req, res) => {
     }
 });
 
-// Ruta para eliminar usuarios
 app.post("/delete", authenticateToken, async (req, res) => {
     const { ids } = req.body;
     try {
@@ -127,4 +120,3 @@ const PORT = process.env.PORT || 8081;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });
-
