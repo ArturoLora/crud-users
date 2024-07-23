@@ -19,13 +19,18 @@ function User() {
 
     const handleApiError = (err) => {
         console.log(err);
-        if (err.response.status === 401 || err.response.status === 403 || err.response.status === 404) {
-            navigate('/');
+        if (err.response) {
+            const { status } = err.response;
+            if (status === 401 || status === 403 || status === 404) {
+                navigate('/');
+            }
+        } else {
+            console.log('An error occurred. Please try again.');
         }
     };
 
     const fetchUsers = () => {
-        axios.get('http://localhost:8081/', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('http://158.23.49.60:8081/', { headers: { Authorization: `Bearer ${token}` } })
             .then(res => setUsers(res.data))
             .catch(handleApiError);
     };
@@ -41,7 +46,7 @@ function User() {
     const handleUserAction = (action) => {
         if (action === 'delete' && !window.confirm('Are you sure you want to delete the selected users?')) return;
 
-        axios.post(`http://localhost:8081/${action}`, { ids: [...selectedUsers] }, { headers: { Authorization: `Bearer ${token}` } })
+        axios.post(`http://158.23.49.60:8081/${action}`, { ids: [...selectedUsers] }, { headers: { Authorization: `Bearer ${token}` } })
             .then(res => {
                 alert(res.data);
                 fetchUsers();
