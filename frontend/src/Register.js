@@ -8,11 +8,20 @@ function Register() {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
+    const showAlert = (message) => {
+        alert(message);
+    };
+
     const handleApiError = (err) => {
-        if (err.response && err.response.status === 400) {
-            alert('Registration failed: ' + err.response.data);
+        if (err.response) {
+            const { status } = err.response;
+            if (status === 400) {
+                showAlert('Registration failed: ' + err.response.data);
+            } else {
+                showAlert('An error occurred. Please try again.');
+            }
         } else {
-            alert('An error occurred. Please try again.');
+            showAlert('An error occurred. Please try again.');
         }
         console.log(err);
     };
@@ -25,13 +34,13 @@ function Register() {
         e.preventDefault();
 
         if (!validateForm()) {
-            alert('All fields are required.');
+            showAlert('All fields are required.');
             return;
         }
 
-        axios.post('http://localhost:8081/register', { name, email, password })
+        axios.post('http://158.23.49.60:8081/register', { name, email, password })
             .then(res => {
-                alert(res.data);
+                showAlert(res.data);
                 navigate('/'); // Redirect to login page
             })
             .catch(handleApiError);
