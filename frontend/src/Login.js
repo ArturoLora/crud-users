@@ -30,7 +30,7 @@ function Login() {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        axios.post('http://localhost:8081/login', { email, password })
+        axios.post('http://158.23.49.60:8081/login', { email, password })
             .then(res => {
                 localStorage.setItem('token', res.data.token);
                 navigate('/user'); 
